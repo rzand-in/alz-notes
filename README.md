@@ -78,7 +78,23 @@ Deploy-Accelerator `
 -starterAdditionalFiles "~/accelerator/config/lib" `
 -output "~/accelerator/output"
 ```
-The first time I launched the command I received the error:
+The first time I launched the command I received 2 errors:
+```
+│ Error: Invalid value for variable
+│ 
+│   on terraform.tfvars.json line 295:
+│  295:   "subscription_ids": {
+│  296:     "management": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+│  297:     "identity": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+│  298:     "connectivity": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+│  299:     "security": ""
+│  300:   },
+│     ├────────────────
+│     │ var.subscription_ids is map of string with 4 elements
+│ 
+│ All subscription IDs must be valid GUIDs
+```
+To correct this I added a sub ID (the management one) for the security subscription. The second error was:
 ```
 │ Error: Listing users: "Request returned status: 401 Unauthorized"
 │ 
@@ -87,28 +103,34 @@ The first time I launched the command I received the error:
 │    7: data "azuredevops_users" "alz" {
 │ 
 ```
-Connected the Azure DevOps organization to entraId
-Updated time zone
-removed the approver in the inputs file
-added r..._...l.com#EXT#@rz...ail.onmicrosoft.com as approver
-used "Andrea Rizzioli" as approver
-used u...@...mail.onmicrosoft.com as approver
-changed the data block, now it has an hardcoded 
-principal_name = "r..._...l.com#EXT#@rz....onmicrosoft.com"
-
-Added sp-alz-bootstrap to the Azure DevOps group [rzand]\Project Collection Administrators + restored original block in groups.tf + restored the r...@hotmail.com approver
-
-set harcoded value again + added a sub id for security
-hardcoded u...@...mail.onmicrosoft.com
-commented all but the first block of groups.tf
-
-recreated the Azure DevOps PAT
-
+This error needed a bit of troubleshooting. I realized that my Azure DevOps organization was not connected with my EntraId directory. I connected the two and also corrected the time zone of the Azure DevOps organization since it was incongrous with the location I am now but I was still receiving the error.
+I tried to remove the approver or change it with other pricipal names but no luck.I tried to hardcode a principal_name in the groups.tf file, tried to add the sp-alz-bootstrap application to the Azure DevOps group "[rzand]\Project Collection Administrators" and even to comment all the content after line 6 of the groups.tf file but still getting 401 type errors. I notice that the userId reported for the unauthorized user was not the one of any user in the active directory. I then tried to login to Azure DevOps via command line
+```
+az devops login
+```
+using my PAT and then discovered that the user was not authorized to access Azure DevOps objects.
+I checked my PAT in the Azure DevOps security and realized that there were no PATs, this I guess because I connected the organization to EntraId.
+I recreated the PAT for my user and the Azure DevOps agents, run the deploymenyt one more time and this time the deployment succeeded.
 ```
 Bootstrap has completed successfully! Thanks for using our tool. Head over to Phase 3 in the documentation to continue...
 ```
+I decided to destroy everything and start over with the original groups.tf file that manages the Azure DevOps apprivers.
 
-Ddestroyed everything and will rebuild with the approvers in the groups.tf
+When I redeployed the accelerator I received an error stating that an Azure DevOps project with a certain Id does not exist or I do not have permissions to access it. That Id is mentioned in the file ./.cache/clipboard-indicator@tudmotu.com/registry.txt
+Deleteing the file did not solve the problem so I deleted the entire content of the output directory.
+This time the failure was because some roles and agent pool already existed
+I removed the agent pool and removed the custom roles. for completing the latter I had to remove the role assignments first.
+Finally success!
+```
+Time taken to complete Terraform apply:
+
+Days Hours Minutes Seconds Milliseconds
+---- ----- ------- ------- ------------
+0    0     7       30      730
+
+
+Bootstrap has completed successfully! Thanks for using our tool. Head over to Phase 3 in the documentation to continue...
+```
 
 
 
