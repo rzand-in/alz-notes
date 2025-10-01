@@ -58,7 +58,59 @@ cd ~
 Copy-Item -Path "$tempFolder/$libFolderPath" -Destination "~/accelerator/config" -Recurse -Force
 Remove-Item -Path $tempFolder -Recurse -Force
 ```
-As instructed edit the inputs.yaml file to copy the inputs-azure-devops.yaml values.
-while configuring the file I left a null string for the security subscription_id and added a ~ (tilde symbol) at the beginning of the output_folder_path tuple. 
+As instructed I edited the inputs.yaml file to copy the inputs-azure-devops.yaml values and assign the values that I previously wrote in the spreadsheet file.
+While configuring the inputs file I left a null string for the security subscription_id and added a ~ (tilde symbol) at the beginning of the output_folder_path tuple. 
+Now is time to populate the platform-landing-zone.tfvars with the values of one of the most popular scenarios: Multi-Region Hub and Spoke Virtual Network with Azure Firewall.
+I copied the [hub-and-spoke-vnet.tfvars](https://raw.githubusercontent.com/Azure/alz-terraform-accelerator/refs/heads/main/templates/platform_landing_zone/examples/full-multi-region/hub-and-spoke-vnet.tfvars) and modified it to disable the creation of the bastion hosts and virtual network gateway to spare some money and time. I also disable the telemetry since this is just a test.
+I did not create a service principal during the prerequisites phase, so I did it now. I granted the new SPN the owner rbac as per instruction but to be able to grant the rbac to the root management group I had to [Elevate access for a Global Administrator](https://learn.microsoft.com/en-gb/azure/role-based-access-control/elevate-access-global-admin?tabs=azure-portal%2Centra-audit-logs#perform-steps-at-root-scope) and log off and logon again the Azure portal.
+I assigned the owner role with "Allow user to assign all roles (highly privileged)" since it was not specified which selection to choose.
+I am logged on to az cli so I do not need to set the following variables:
+```
+$env:ARM_TENANT_ID="<tenant id>"
+$env:ARM_CLIENT_ID="<client id>"
+$env:ARM_CLIENT_SECRET="<client id>"
+$env:ARM_SUBSCRIPTION_ID="<subscription id>"
+```
+Now I can run the accelerator:
+```
+Deploy-Accelerator `
+-inputs "~/accelerator/config/inputs.yaml", "~/accelerator/config/platform-landing-zone.tfvars" `
+-starterAdditionalFiles "~/accelerator/config/lib" `
+-output "~/accelerator/output"
+```
+The first time I launched the command I received the error:
+```
+│ Error: Listing users: "Request returned status: 401 Unauthorized"
+│ 
+│   with module.azure_devops.data.azuredevops_users.alz["rzand@hotmail.com"],
+│   on ../../modules/azure_devops/groups.tf line 7, in data "azuredevops_users" "alz":
+│    7: data "azuredevops_users" "alz" {
+│ 
+```
+Connected the Azure DevOps organization to entraId
+Updated time zone
+removed the approver in the inputs file
+added r..._...l.com#EXT#@rz...ail.onmicrosoft.com as approver
+used "Andrea Rizzioli" as approver
+used u...@...mail.onmicrosoft.com as approver
+changed the data block, now it has an hardcoded 
+principal_name = "r..._...l.com#EXT#@rz....onmicrosoft.com"
+
+Added sp-alz-bootstrap to the Azure DevOps group [rzand]\Project Collection Administrators + restored original block in groups.tf + restored the r...@hotmail.com approver
+
+set harcoded value again + added a sub id for security
+hardcoded u...@...mail.onmicrosoft.com
+commented all but the first block of groups.tf
+
+recreated the Azure DevOps PAT
+
+```
+Bootstrap has completed successfully! Thanks for using our tool. Head over to Phase 3 in the documentation to continue...
+```
+
+Ddestroyed everything and will rebuild with the approvers in the groups.tf
+
+
+
 
 
