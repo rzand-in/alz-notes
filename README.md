@@ -8,22 +8,19 @@ There is a large amount of information about Azure Landing Zones and Cloud Adopt
 
 What this repository wants to do is to create a simple guide about how to use the code produced and maintaned by Microsoft in the repository mentioned above.
 
-Even when the concepts about landing zones are clear, preparing the environment to using the alz repo to deploy them is complex, the accelerator creates this environment for us but there can be some undocumented issues here and there since there can be a vast number of differences between environments.
+Even when the concepts about landing zones are clear, preparing the environment to using the alz repo to deploy them is complex, the accelerator creates this environment for us but there can be some undocumented issues here and there due to the specific characteristics and configurations of the environments where the deployment is executed.
 
 Below you can read what happened when I deployd the accelerator.
 
-## Which Microsoft Landng Zone repository to use
-I want to deploy ALZ via infrastructure as code.
-
-There are 2 Github repositories for Landing Zones: 
+For the record, there are 2 Microsoft Github repositories for Landing Zones: 
 * The Enterprise Scale - https://github.com/Azure/Enterprise-Scale
 * The Accelerator - https://azure.github.io/Azure-Landing-Zones/accelerator/
 
-This is a bit confusing. My understanding is that the former is cronologically the first reference to build Landing Zones, the latter is the new approach that uses Azure Verified Modules to build the infrastructure.
+This is a bit confusing. My understanding is that the former is cronologically the first reference to build Landing Zones, the latter is the new approach that uses Azure Verified Modules to build the infrastructure and provides the accelerator that build the deployment environment.
 
 The latter is the one of interest here.
 
-A video at https://www.youtube.com/watch?v=YxOzTwEnDE0&t=4403s shows that even for the Microsoft employee who built the repo need some time to create the infrastructure so, no need to fret if it takes some time to complete the exercise.
+At https://www.youtube.com/watch?v=YxOzTwEnDE0&t=4403s you can see the Microsoft employees who built the repo creating the infrastructure.
 
 ## Implementation, errors and corrections
 I followed the 4 phases instruction at https://azure.github.io/Azure-Landing-Zones/accelerator/userguide/
@@ -82,7 +79,7 @@ I did not create a service principal during the prerequisites phase, so I am pro
 
 I granted the new SPN the owner rbac as per instruction but to be able to grant the rbac to the root management group I had to [Elevate access for a Global Administrator](https://learn.microsoft.com/en-gb/azure/role-based-access-control/elevate-access-global-admin?tabs=azure-portal%2Centra-audit-logs#perform-steps-at-root-scope) and log off and logon again the Azure portal.
 
-I assigned the owner role with "Allow user to assign all roles (highly privileged)" since it was not specified which selection to choose.
+I assigned the owner role with "Allow user to assign all roles (highly privileged)" since the instruction did not specified which selection to choose.
 
 I am logged on to az cli so I do not need to set the following variables:
 ```
@@ -145,15 +142,15 @@ I recreated the PATs for my user and the Azure DevOps agents, run the deploymeny
 ```
 Bootstrap has completed successfully! Thanks for using our tool. Head over to Phase 3 in the documentation to continue...
 ```
-I decided to destroy everything again and start over with the original groups.tf file that manages the Azure DevOps approvers.
+I decided to repeat the deployment from scratch. I deleted all the resource groups and the Azure DevOps project created by the deployment znd run the PowerShell command again this time using the original groups.tf file that manages the Azure DevOps approvers.
 
-When I redeployed the accelerator I received an error stating that an Azure DevOps project with a certain Id does not exist or I do not have permissions to access it. 
+The accelerator deployment returned an error stating that an Azure DevOps project with a certain Id does not exist or I do not have permissions to access it. 
 
 That Id is mentioned in the file ./.cache/clipboard-indicator@tudmotu.com/registry.txt
 
-Deleteing the file did not solve the problem so I deleted the entire content of the output directory.
+Deleteing the file did not solve the problem so I deleted the entire content of the accelerator/output directory.
 
-This time the failure was because some roles and agent pool already existed
+Another failure occured. This time it was because an agent pool and some iam custom roles already existed.
 
 I removed the agent pool and removed the custom roles. for completing the latter I had to remove the role assignments first.
 
@@ -168,7 +165,15 @@ Days Hours Minutes Seconds Milliseconds
 
 Bootstrap has completed successfully! Thanks for using our tool. Head over to Phase 3 in the documentation to continue...
 ```
+## Consideration about the accelerator deployment 
+The deployment created an Azure DevOps project that includes 2 pipelines and an agent pool.
 
+The agent should be able to create a secure infrastructure that uses private endpoint.
+
+I found great that all the pieces needed to deploy the Terraform code have been built from the accelerator, what I want to understand is if the environmant is designed to automatically manage the agent. 
+My first questions are:
+* Are the agents being patched?
+* The agents are using a PAT, what happens when it expires?
 
 
 
